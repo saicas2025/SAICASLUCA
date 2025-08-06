@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<title>SAICAS AI</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    label, input, select, textarea, button { display: block; margin: 10px 0; width: 100%; max-width: 500px; }
+    #result, #ai-response { margin-top: 20px; }
+  </style>
+<script>
+const PARAMETRI = {};
+</script>
+</head>
+<body>
+<input accept=".pdf,image/*" id="fileInput" type="file"/><button onclick="calcolaConAI(document.getElementById('fileInput'))">Calcola con AI</button><h1>Preventivo SAICAS AI</h1>
+<label>Codice Pezzo: <input id="codice" type="text"/></label>
+<label>Nome Pezzo: <input id="nome" type="text"/></label>
+<label>Cliente: <input id="cliente" type="text"/></label>
+<label>Materiale:
+    <select id="materiale">
+<option data-prezzo="1.50" value="1.80">S235 JR (€1.80/kg)</option>
+<option data-prezzo="4.20" value="AISI 304">AISI 304 (€4.20/kg)</option>
+<option data-prezzo="5.00" value="AISI 316">AISI 316 (€5.00/kg)</option>
+<option data-prezzo="3.80" value="Alluminio Peraluman">Alluminio Peraluman (€3.80/kg)</option>
+<option data-prezzo="4.00" value="Alluminio Anticorodal">Alluminio Anticorodal (€4.00/kg)</option>
+<option data-prezzo="3.60" value="Alluminio 1050">Alluminio 1050 (€3.60/kg)</option>
+<option data-prezzo="6.00" value="Rame">Rame (€6.00/kg)</option>
+<option data-prezzo="5.50" value="Ottone">Ottone (€5.50/kg)</option>
+<option data-prezzo="6.20" value="Bronzo">Bronzo (€6.20/kg)</option>
+<option data-prezzo="1.60" value="1.80">Ferro decapato (€1.60/kg)</option>
+<option data-prezzo="1.80" value="1.80">Ferro zincato (€1.80/kg)</option>
+<option data-prezzo="2.00" value="Acciaio verniciato">Acciaio verniciato (€2.00/kg)</option>
+<option data-prezzo="2.50" value="Acciaio corten">Acciaio corten (€2.50/kg)</option>
+<option data-prezzo="1.90" value="Lamiera zincata">Lamiera zincata (€1.90/kg)</option>
+<option data-prezzo="2.10" value="Lamiera mandorlata">Lamiera mandorlata (€2.10/kg)</option>
+<option data-prezzo="1.70" value="Acciaio al carbonio">Acciaio al carbonio (€1.70/kg)</option>
+<option data-prezzo="4.40" value="Inox satinato">Inox satinato (€4.40/kg)</option>
+<option data-prezzo="4.80" value="Inox lucido">Inox lucido (€4.80/kg)</option>
+<option data-prezzo="2.80" value="Plexiglass">Plexiglass (€2.80/kg)</option>
+<option data-prezzo="3.20" value="Policarbonato">Policarbonato (€3.20/kg)</option>
+<option data-prezzo="2.60" value="PVC">PVC (€2.60/kg)</option>
+<option data-prezzo="2.90" value="Nylon">Nylon (€2.90/kg)</option>
+<option data-prezzo="5.20" value="Teflon">Teflon (€5.20/kg)</option>
+<option data-prezzo="18.00" value="Titanio">Titanio (€18.00/kg)</option>
+<option data-prezzo="1.80" value="Ghisa">Ghisa (€1.80/kg)</option>
+<option data-prezzo="3.40" value="Magnesio">Magnesio (€3.40/kg)</option>
+<option data-prezzo="4.20" value="Alluminio mandorlato 3+2">Alluminio mandorlato 3+2 (€4.20/kg)</option>
+<option data-prezzo="4.50" value="Alluminio mandorlato 5+2">Alluminio mandorlato 5+2 (€4.50/kg)</option>
+<option data-prezzo="2.30" value="Lamiera bugnata 3+2">Lamiera bugnata 3+2 (€2.30/kg)</option>
+<option data-prezzo="2.50" value="Lamiera striata 3+2">Lamiera striata 3+2 (€2.50/kg)</option>
+</select>
+<label>Prezzo materiale personalizzato (€/kg): <input id="prezzoMateriale" placeholder="Auto da lista o modifica qui" step="0.01" type="number"/></label>
+</label>
+<label>Spessore (mm): <input id="spessore" type="number"/></label><label>Peso stimato (kg): <input id="peso" type="number"/></label>
+<label>Pieghe: <input id="pieghe" type="number"/></label>
+<div class="input-group">
+<label for="operatori">Numero operatori richiesti:</label>
+<input id="operatori" min="1" name="operatori" onchange="manualOverrideOperatori = true;" step="1" type="number" value="1"/>
+</div>
+<label>Fori: <input id="fori" type="number"/></label><label for="foriLaser">Fori taglio laser</label><input id="foriLaser" readonly="True" type="number" value="0"/><label for="foriTrapano">Fori a trapano</label><input id="foriTrapano" readonly="True" type="number" value="0"/>
+<label>Filettature: <input id="filettature" type="number"/></label>
+<label>Taglio Laser (min): <input id="taglioLaser" type="number"/></label>
+<label>Lunghezza taglio (mm): <input id="lunghezzaTaglio" type="number"/></label>
+<label>Taglio Seghetto (min): <input id="taglioSeghetto" type="number"/></label>
+<label>Saldatura (min): <input id="saldatura" type="number"/></label>
+<div>
+<label>
+<input checked="" id="saldaturaMinima" type="checkbox"/>
+    Applica sempre costo minimo saldatura (€2,50) se saldatura è 0
+  </label>
+</div>
+<label>Tubolari (metri): <input id="tubolari" type="number"/></label>
+
+<label>Laminati mercantili (metri): <input id="laminati" type="number"/></label>
+<label>Travi (metri): <input id="travi" type="number"/></label>
+<label>Profili aperti (metri): <input id="profili_aperti" type="number"/></label>
+<label>Tubi acqua-gas / meccanici (metri): <input id="tubi_acqua_gas" type="number"/></label>
+
+
+<h3 style="margin-top:25px;">Tubolari (calcolo automatico)</h3>
+<label>Sezione tubolare (mm, es. 150x150): <input id="sezioneTubolare" type="text" placeholder="Es. 150x150"/></label>
+<label>Spessore tubolare (mm): <input id="spessoreTubolare" type="number" /></label>
+<label>Metri totali: <input id="metriTubolare" type="number" /></label>
+<label>Materiale tubolare:
+  <select id="materialeTubolare">
+    <option value="ferro">Ferro</option>
+    <option value="inox">Inox</option>
+    <option value="alluminio">Alluminio</option>
+  </select>
+</label>
+
+<label>Calandratura (pezzi): <input id="calandratura" type="number"/></label>
+<label>Prezzo uomo/ora (€): <input id="uomo" type="number" value="42"/></label>
+<label>Margine %: <input id="margine" type="number" value="20"/></label>
+<div class="riga">
+<label for="verniciatura">Verniciatura / Trattamento:</label>
+<select id="verniciatura">
+<option data-costo="0" value="nessuna">Nessuna</option>
+<optgroup label="Trattamenti chimici">
+<option data-costo="1.20" value="fosfatazione">Fosfatazione al manganese (€1.20)</option>
+<option data-costo="1.80" value="nichelatura">Nichelatura (€1.80)</option>
+<option data-costo="1.50" value="brunitura">Brunitura (€1.50)</option>
+</optgroup>
+<optgroup label="Trattamenti chimici aggiuntivi">
+<option data-costo="1.70" value="anodizzazione">Anodizzazione (€1.70)</option>
+<option data-costo="2.50" value="cromatura">Cromatura (€2.50)</option>
+<option data-costo="1.30" value="decapaggio">Decapaggio (€1.30)</option>
+<option data-costo="1.40" value="passivazione">Passivazione (€1.40)</option>
+<option data-costo="1.00" value="sabbiatura">Sabbiatura (€1.00)</option>
+</optgroup>
+<optgroup label="Verniciature aggiuntive">
+<option data-costo="2.60" value="vern_epossidica">Verniciatura epossidica (€2.60)</option>
+<option data-costo="2.80" value="vern_poliuretanica">Verniciatura poliuretanica (€2.80)</option>
+<option data-costo="2.40" value="vern_acrilica">Verniciatura acrilica (€2.40)</option>
+<option data-costo="2.70" value="vern_siliconica">Verniciatura siliconica (€2.70)</option>
+<option data-costo="2.90" value="vern_anticalorica">Verniciatura anticalorica (€2.90)</option>
+</optgroup>
+<optgroup label="Protettivi aggiuntivi">
+<option data-costo="2.60" value="zincatura_elettrolitica">Zincatura elettrolitica (€2.60)</option>
+<option data-costo="3.10" value="tropicalizzazione">Tropicalizzazione (€3.10)</option>
+<option data-costo="1.90" value="vern_anti_ruggine">Verniciatura anti-ruggine (€1.90)</option>
+<option data-costo="2.00" value="trattamento_anti_uv">Trattamento anti-UV (€2.00)</option>
+<option data-costo="2.20" value="trattamento_anticorrosione">Trattamento anti-corrosione (€2.20)</option>
+</optgroup>
+<optgroup label="Verniciature">
+<option data-costo="2.00" value="vern_liquido">Verniciatura a liquido (€2.00)</option>
+<option data-costo="2.20" value="vern_polvere">Verniciatura a polvere (€2.20)</option>
+<option data-costo="2.50" value="cataforesi">Cataforesi (€2.50)</option>
+</optgroup>
+<optgroup label="Protettivi">
+<option data-costo="2.30" value="zincatura">Zincatura (€2.30)</option>
+<option data-costo="3.00" value="zincatura_caldo">Zincatura a caldo (€3.00)</option>
+</optgroup>
+<option data-prezzo="4.20" value="Alluminio mandorlato 3+2">Alluminio mandorlato 3+2 (€4.20/kg)</option>
+<option data-prezzo="4.50" value="Alluminio mandorlato 5+2">Alluminio mandorlato 5+2 (€4.50/kg)</option>
+<option data-prezzo="2.30" value="Lamiera bugnata 3+2">Lamiera bugnata 3+2 (€2.30/kg)</option>
+<option data-prezzo="2.50" value="Lamiera striata 3+2">Lamiera striata 3+2 (€2.50/kg)</option>
+</select>
+</div>
+<script>
+  let manualOverrideOperatori = false;
+  function aggiornaOperatoriDaPeso() {
+    if (manualOverrideOperatori) return;
+    const peso = parseFloat(document.getElementById("peso").value);
+    const operatori = document.getElementById("operatori");
+    if (!isNaN(peso)) {
+      operatori.value = peso > 25 ? 2 : 1;
+    }
+  }
+  document.getElementById("peso").addEventListener("input", aggiornaOperatoriDaPeso);
+</script>
+<div class="riga">
+<label for="margineVerniciatura">Margine Verniciatura (%):</label>
+<input id="margineVerniciatura" max="100" min="0" type="number" value="30"/>
+</div>
+<option data-costo="0" value="nessuna">Nessuna</option>
+<optgroup label="Trattamenti chimici">
+<option data-costo="1.20" value="fosfatazione">Fosfatazione al manganese (€1.20)</option>
+<option data-costo="1.80" value="nichelatura">Nichelatura (€1.80)</option>
+<option data-costo="1.50" value="brunitura">Brunitura (€1.50)</option>
+</optgroup>
+<optgroup label="Verniciature">
+<option data-costo="2.00" value="vern_liquido">Verniciatura a liquido (€2.00)</option>
+<option data-costo="2.20" value="vern_polvere">Verniciatura a polvere (€2.20)</option>
+<option data-costo="2.50" value="cataforesi">Cataforesi (€2.50)</option>
+</optgroup>
+<optgroup label="Protettivi">
+<option data-costo="2.30" value="zincatura">Zincatura (€2.30)</option>
+<option data-costo="3.00" value="zincatura_caldo">Zincatura a caldo (€3.00)</option>
+</optgroup>
+
+<table border="1" cellpadding="6" cellspacing="0">
+  <thead>
+    <tr><th>Lavorazione</th><th>Dettaglio</th><th>Costo (€)</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Componenti commerciali</td>
+      <td>Cerniere, bulloneria, guide, maniglie, ecc.</td>
+      <td><input type="number" id="componentiCommerciali" value="0" onchange="ricalcola()" /></td>
+    </tr>
+    <tr>
+      <td>Materiale</td>
+      <td>Prezzo automatico da peso × €/kg</td>
+      <td><input type="number" id="materiale" value="0" onchange="ricalcola()" /></td>
+    </tr>
+    
+    <tr>
+      <th colspan="2">Totale netto</th>
+      <th id="totaleNetto">€ 0,00</th>
+    </tr>
+    <tr>
+      <td colspan="2">Margine 20%</td>
+      <td>Calcolato automaticamente</td>
+    </tr>
+    <tr>
+      <th colspan="2">Totale finale</th>
+      <th id="totaleFinale">€ 0,00</th>
+    </tr>
+  </tbody>
+</table>
+
+
+<label><strong>Totale (€):</strong> <input id="totale" type="text" readonly></label>
+<label>Note: <textarea id="note"></textarea></label>
+<label>Carica PDF o immagine:
+    
+</label>
+<div id="ai-response" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+<button onclick="ricalcola()">Ricalcola Preventivo</button>
+<button onclick="esportaPDF()">Esporta PDF</button>
+<div id="result"></div>
+<h2>Parla con l'AI</h2>
+<textarea id="prompt" placeholder="Scrivi qui..." rows="4"></textarea>
+<button onclick="interrogaAI()">Invia</button>
+<div id="ai-response"></div>
+<script>
+    function calcolaPreventivo() {
+      document.getElementById("result").innerText = "Calcolo AI in corso...";
+    }
+    function ricalcola() {
+    const saldatura = parseFloat(document.getElementById("saldatura").value) || 0;
+    const flagSaldaturaMinima = document.getElementById("saldaturaMinima")?.checked;
+    const costoSaldaturaExtra = (saldatura === 0 && flagSaldaturaMinima) ? 2.50 : 0;
+
+    const calandratura = parseFloat(document.getElementById("calandratura").value) || 0;
+    const pieghe = parseFloat(document.getElementById("pieghe").value) || 0;
+    const spessore = parseFloat(document.getElementById("spessore").value) || 0;
+    const attrezzaggioPiegaMin = (pieghe > 0 && spessore > 0) ? 5 : 0;
+    const attrezzaggioCalandraturaMin = (calandratura > 0) ? 5 : 0;
+
+    const saldatura = parseFloat(document.getElementById("saldatura").value) || 0;
+    const flagSaldaturaMinima = document.getElementById("saldaturaMinima")?.checked;
+    const costoSaldaturaExtra = (saldatura === 0 && flagSaldaturaMinima) ? 2.50 : 0;
+
+
+    // Calcolo tempo e costo foratura
+    const fori = parseInt(document.getElementById("fori").value) || 0;
+    const diametroMedio = 10; // ipotetico valore medio se non indicato
+    let tempoForaturaTot = 0;
+
+    for (let i = 0; i < fori; i++) {
+        if (diametroMedio <= 11) {
+            tempoForaturaTot += 2;
+        } else if (diametroMedio <= 20) {
+            tempoForaturaTot += 4;
+        } else {
+            tempoForaturaTot += 8;
+        }
+    }
+
+    const costoForatura = tempoForaturaTot * (42 / 60);
+
+      const peso = parseFloat(document.getElementById("peso").value) || 0;
+      const uomo = parseFloat(document.getElementById("uomo").value) || 0;
+      const tempo = attrezzaggioCalandraturaMin + attrezzaggioPiegaMin + (parseFloat(document.getElementById("taglioLaser").value) || 0) +
+                    (parseFloat(document.getElementById("taglioSeghetto").value) || 0) +
+                    (parseFloat(document.getElementById("saldatura").value) || 0);
+      const margine = parseFloat(document.getElementById("margine").value) || 0;
+      
+    const lunghezzaTaglio = parseFloat(document.getElementById("lunghezzaTaglio")?.value) || 0;
+    const spessoreTaglio = parseFloat(document.getElementById("spessore")?.value) || 0;
+    const velocitaTaglioTabella = {
+        1.0: 6970,
+        1.5: 5440,
+        2.0: 4250,
+        2.5: 3485,
+        3.0: 3060
+    };
+    const costoMinuto = 3.15;
+    let velocita = 0;
+    if (velocitaTaglioTabella.hasOwnProperty(spessoreTaglio)) {
+        velocita = velocitaTaglioTabella[spessoreTaglio];
+    }
+    let tempoTaglio = velocita > 0 ? (lunghezzaTaglio / velocita) + (40 / 60) : 0;
+    const costoTaglioLaser = tempoTaglio * costoMinuto;
+
+      
+    // Calcolo lavorazioni da catalogo PDF
+    const metriLaminati = parseFloat(document.getElementById("laminati")?.value) || 0;
+    const metriTravi = parseFloat(document.getElementById("travi")?.value) || 0;
+    const metriProfili = parseFloat(document.getElementById("profili_aperti")?.value) || 0;
+    const metriTubi = parseFloat(document.getElementById("tubi_acqua_gas")?.value) || 0;
+
+    const costoLaminati = 15.0 * metriLaminati * 1.8;
+    const costoTravi = 50.0 * metriTravi * 1.8;
+    const costoProfili = 20.0 * metriProfili * 1.8;
+    const costoTubi = 12.0 * metriTubi * 1.8;
+
+      
+    const sezione = document.getElementById("sezioneTubolare")?.value || "0x0";
+    const spessore = parseFloat(document.getElementById("spessoreTubolare")?.value) || 0;
+    const metriTubolare = parseFloat(document.getElementById("metriTubolare")?.value) || 0;
+    const materiale = document.getElementById("materialeTubolare")?.value || "ferro";
+
+    const densita = {
+        "ferro": 7850,
+        "inox": 8000,
+        "alluminio": 2700
+    };
+
+    let latoA = 0, latoB = 0;
+    if (sezione.includes("x")) {
+        const parti = sezione.toLowerCase().split("x");
+        latoA = parseFloat(parti[0]) || 0;
+        latoB = parseFloat(parti[1]) || 0;
+    }
+
+    const areaEsterna = latoA * latoB;
+    const areaInterna = (latoA - 2 * spessore) * (latoB - 2 * spessore);
+    const area = Math.max(areaEsterna - areaInterna, 0); // in mm²
+    const volume_mm = area * 1; // volume per metro = area x 1000 mm (1 metro)
+    const volume_m3 = volume_mm / 1e9; // mm³ -> m³
+    const peso_metro = volume_m3 * (densita[materiale] || 7850); // kg/m
+    const pesoTotTubolare = peso_metro * metriTubolare;
+    const costoTubolari = pesoTotTubolare * 1.80;
+
+      const costo = peso * 4 + tempo * (uomo / 60) + costoForatura + costoSaldaturaExtra + costoTaglioLaser + costoTubolari + costoLaminati + costoTravi + costoProfili + costoTubi;
+      const totale = costo + (costo * margine / 100);
+      document.getElementById("result").innerText = `Totale: €${totale.toFixed(2)}`;
+      document.getElementById("totale").value = totale.toFixed(2);
+    }
+    function esportaPDF() {
+      alert("Esportazione in PDF in arrivo...");
+    }
+    function interrogaAI() {
+      document.getElementById("ai-response").innerText = "Risposta AI in arrivo...";
+    }
+  </script>
+<div style="margin-top: 30px;">
+<h3>Parla con l'intelligenza artificiale</h3>
+<textarea id="domandaAI" placeholder="Scrivi qui la tua domanda..." rows="4" style="width: 100%;"></textarea><br/>
+<button onclick="inviaDomandaAI()">Invia domanda</button>
+<div id="rispostaAI" style="margin-top: 10px; font-weight: bold;"></div>
+</div>
+<script>
+async function inviaDomandaAI() {
+    const domanda = document.getElementById("domandaAI").value;
+    const rispostaEl = document.getElementById("rispostaAI");
+    rispostaEl.innerHTML = "Sto pensando...";
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer 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"
+        },
+
+        body: JSON.stringify({
+            model: "gpt-4",
+            messages: [{ role: "user", content: domanda }]
+        })
+    });
+
+    const data = await response.json();
+    if (data.choices && data.choices.length > 0) {
+        rispostaEl.innerHTML = data.choices[0].message.content;
+    } else {
+        rispostaEl.innerHTML = "Nessuna risposta ricevuta.";
+    }
+}
+</script>
+<script>
+<script>
+async function calcolaConAI(fileInput) {
+  const file = fileInput.files[0];
+  if (!file) return alert("Carica un file!");
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result.split(',')[1];
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
+      body: JSON.stringify({
+        model: "gpt-4-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Analizza il disegno tecnico e rispondi in JSON con i seguenti campi:
+- spessore
+- numero_fori_totali
+- numero_fori_taglio_laser
+- numero_fori_trapano
+
+Regole:
+- Se spessore < 5 mm → tutti i fori = taglio laser
+- Se spessore da 5 a 6 mm → fori con diametro < spessore = trapano, altri laser
+- Se spessore da 8 a 20 mm → idem: Ø < spessore = trapano, altrimenti laser
+- Se Ø ≥ spessore → laser
+
+E includi anche: pieghe, saldatura, filettature, peso_kg, materiale`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: "data:image/png;base64," + base64
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1500
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content;
+
+    document.getElementById("ai-response").textContent = reply || "Nessuna risposta ricevuta.";
+
+    // Compila i campi numerici se la risposta è in JSON
+    try {
+      const obj = JSON.parse(reply);
+      if (obj) {
+        if (obj.spessore) document.getElementById("spessore").value = obj.spessore;
+        if (obj.numero_fori_totali) document.getElementById("fori").value = obj.numero_fori_totali;
+        if (obj.numero_fori_taglio_laser) document.getElementById("foriLaser").value = obj.numero_fori_taglio_laser;
+        if (obj.numero_fori_trapano) document.getElementById("foriTrapano").value = obj.numero_fori_trapano;
+      }
+    } catch (e) {
+      console.warn("Impossibile interpretare risposta AI:", e);
+    }
+  };
+
+  reader.readAsDataURL(file);
+}
+</script>
+
+<div style="margin-top:30px">
+  <h3>📤 Carica disegno (PDF o immagine):</h3>
+  <input type="file" id="fileInput" accept=".pdf,image/*" onchange="caricaFile()" />
+  <br><br>
+  <textarea id="outputAI" rows="8" style="width:100%" placeholder="Risposta AI..."></textarea>
+</div>
+
+<script>
+async function caricaFile() {
+  const fileInput = document.getElementById("fileInput");
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function () {
+    const base64 = reader.result.split(",")[1];
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
+      body: JSON.stringify({
+        model: "gpt-4-vision-preview",
+        messages: [{
+          role: "user",
+          content: [
+            { type: "text", text: "Leggi il disegno e calcola il preventivo compilando i campi della schermata: componenti commerciali, materiale. Rispondi solo con i valori da inserire." },
+            { type: "image_url", image_url: { url: "data:image/png;base64," + base64 } }
+          ]
+        }],
+        max_tokens: 500
+      })
+    });
+    const data = await res.json();
+    document.getElementById("outputAI").value = data.choices?.[0]?.message?.content || "Nessuna risposta.";
+  };
+  if (file.type === "application/pdf") {
+    const pdfjsLib = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.mjs");
+    const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+    const page = await pdf.getPage(1);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    const viewport = page.getViewport({ scale: 2.0 });
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    await page.render({ canvasContext: context, viewport }).promise;
+    canvas.toBlob(blob => reader.readAsDataURL(blob));
+  } else {
+    reader.readAsDataURL(file);
+  }
+}
+</script>
+
+</body>
+</html>
